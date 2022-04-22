@@ -24,7 +24,7 @@ CLEAN_SUBPROJECTS=${CLEAN_SUBPROJECTS_${SUBPROJECTS}}
 
 
 # Project Name
-PROJECTNAME=Garverick_HW2.X
+PROJECTNAME=Garverick_HW3.X
 
 # Active Configuration
 DEFAULTCONF=default
