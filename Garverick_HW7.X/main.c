@@ -2,6 +2,7 @@
 #include<sys/attribs.h>  // __ISR macro
 
 #include <stdio.h>
+#include <math.h>
 
 #include "i2c_master_noint.h"
 #include "mpu6050.h"
@@ -40,10 +41,30 @@
 #define PIC32_SYS_FREQ 48000000ul // 48 million Hz
 #define PIC32_DESIRED_BAUD 115200 // Baudrate for RS232
 
+struct IMU_Data
+{
+    float accelX;
+    float accelY;
+    float accelZ;
+    float gyroX;
+    float gyroY;
+    float gyroZ; 
+};
+
+typedef struct IMU_Data IMU_Data;
+
+struct Orientation{
+    float roll;
+    float pitch;
+    float yaw;
+};
+
+typedef struct Orientation Orientation;
+
 void NU32_UART2_Startup(void);
 void NU32_ReadUART2(char * string, int maxLength);
 void NU32_WriteUART2(const char * string);
-
+Orientation calc_RPY(IMU_Data IMU, Orientation saved_RPY, double dt);
 void blink();
 
 int main() {
@@ -100,7 +121,7 @@ int main() {
     char m_out[200]; // char array for uart data going out
     int i;
     #define NUM_DATA_PNTS 300 // how many data points to collect at 100Hz
-    float ax[NUM_DATA_PNTS], ay[NUM_DATA_PNTS], az[NUM_DATA_PNTS], gx[NUM_DATA_PNTS], gy[NUM_DATA_PNTS], gz[NUM_DATA_PNTS], temp[NUM_DATA_PNTS];
+    float ax[NUM_DATA_PNTS], ay[NUM_DATA_PNTS], az[NUM_DATA_PNTS], gx[NUM_DATA_PNTS], gy[NUM_DATA_PNTS], gz[NUM_DATA_PNTS], temp[NUM_DATA_PNTS], roll[NUM_DATA_PNTS], pitch[NUM_DATA_PNTS], yaw[NUM_DATA_PNTS];
     
     sprintf(m_out,"MPU-6050 WHO_AM_I: %X\r\n",whoami());
     NU32_WriteUART2(m_out);
@@ -122,6 +143,10 @@ int main() {
         
         blink();
 
+        Orientation saved_RPY;
+        saved_RPY.roll = 0;
+        saved_RPY.pitch = 0;
+        saved_RPY.yaw = 0;
         // collect data
         for (i=0; i<NUM_DATA_PNTS; i++){
             _CP0_SET_COUNT(0);
@@ -134,17 +159,49 @@ int main() {
             gy[i] = conv_yG(IMU_buf);
             gz[i] = conv_zG(IMU_buf);
             temp[i] = conv_temp(IMU_buf);
+
+            IMU_Data sample;
+            sample.accelX = ax[i];
+            sample.accelY = ay[i];
+            sample.accelZ = az[i];
+            sample.gyroX = gx[i];
+            sample.gyroY = gy[i];
+            sample.gyroZ = gz[i];
             
+            Orientation calced_RPY = calc_RPY(sample, saved_RPY, .01);
+            saved_RPY = calced_RPY;
+            
+            roll[i] = calced_RPY.roll;
+            pitch[i] = calced_RPY.pitch;
+            yaw[i] = calced_RPY.yaw;
             while(_CP0_GET_COUNT()<24000000/2/100){}
         }
         
         // print data
         for (i=0; i<NUM_DATA_PNTS; i++){
-            sprintf(m_out,"%d %f %f %f %f %f %f %f\r\n",NUM_DATA_PNTS-i,ax[i],ay[i],az[i],gx[i],gy[i],gz[i],temp[i]);
+            sprintf(m_out,"%d %f %f %f %f %f %f %f %f %f %f\r\n",NUM_DATA_PNTS-i,ax[i],ay[i],az[i],gx[i],gy[i],gz[i],temp[i],roll[i], pitch[i], yaw[i]);
             NU32_WriteUART2(m_out);
         }
         
     }
+}
+
+
+Orientation calc_RPY(IMU_Data IMU, Orientation saved_RPY, double dt){
+    Orientation RPY;
+    
+    float roll_acc = 180 * atan(IMU.accelY/sqrt(IMU.accelX*IMU.accelX + IMU.accelZ*IMU.accelZ))/M_PI; 
+    float pitch_acc = 180 * atan(IMU.accelX/sqrt(IMU.accelY*IMU.accelY + IMU.accelZ*IMU.accelZ))/M_PI;
+    
+    float roll_gyro = IMU.gyroY * dt;  // Angle around the Y-axis
+    float pitch_gyro = IMU.gyroX * dt; // Angle around the X-axis
+    
+    //Complimentary Filter
+    RPY.roll = 0.7 * (saved_RPY.roll - roll_gyro) + 0.3 * roll_acc;
+    RPY.pitch = 0.7 * (saved_RPY.pitch + pitch_gyro) + 0.3 * pitch_acc;
+    RPY.yaw = 180 * atan(IMU.accelZ/sqrt(IMU.accelX*IMU.accelX + IMU.accelY*IMU.accelY))/M_PI;
+
+    return RPY;
 }
 
 void NU32_ReadUART2(char * message, int maxLength) {
@@ -180,7 +237,6 @@ void NU32_WriteUART2(const char * string) {
     ++string;
   }
 }
-
 
 void blink(){
     _CP0_SET_COUNT(0);
