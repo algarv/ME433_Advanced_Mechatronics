@@ -3,7 +3,7 @@
     <type>com.microchip.mplab.nbide.embedded.makeproject</type>
     <configuration>
         <data xmlns="http://www.netbeans.org/ns/make-project/1">
-            <name>Garverick_HW9-2</name>
+            <name>Garverick_HW9</name>
             <creation-uuid>834d94f5-fc4a-4d39-94fc-9bc5cf74bc99</creation-uuid>
             <make-project-type>0</make-project-type>
             <c-extensions>c</c-extensions>
