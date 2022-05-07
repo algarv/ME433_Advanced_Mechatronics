@@ -2,7 +2,7 @@
 #include<stdio.h>
 #include <math.h>
 #include <time.h>
-#include "ws2812b.c"
+#include "ws2812b.h"
 
 // DEVCFG0
 #pragma config DEBUG = OFF // disable debugging
@@ -59,29 +59,81 @@ void blink(){
     _CP0_SET_COUNT(0);
 }
 
-
 int main() {
 
     TRISAbits.TRISA4 = 0;
     LATAbits.LATA4 = 0;
     
-    TRISBbits.TRISB10 = 0;
-    LATBbits.LATB10 = 0;
-    
     ws2812b_setup();
     wsColor c[5];
-
+    int a[360];
+    int b[360];
+    int d[360];
+    int e[360];
+    int f[360];
+    
+    for (int i = 0; i < 360; i += 1){
+            a[i] = i;
+            if (i + 15 < 360){
+                b[i] = i + 15;
+            }
+            else{
+                b[i] = i + 15 - 360;
+            }
+            if (i + 30 < 360){
+                d[i] = i + 30;                
+            }
+            else{
+                d[i] = i + 30 - 360;
+            }
+            if (i + 40 < 360){
+                e[i] = i + 40;                
+            }
+            else{
+                e[i] = i + 40 - 360;
+            }
+            if (i + 50 < 360){
+                f[i] = i + 50;                
+            }
+            else{
+                f[i] = i + 50 - 360;
+            }
+    }   
+    
+    
     while (1) {
         
         blink();
-        
-        for (int i = 0; i < 5; i++){
-            c[i].r = 125;
-            c[i].b = 0;
-            c[i].g = 0;
-        }   
-           
-        ws2812b_setColor(c, 5);
-
+                
+        for (int i = 0; i < 360; i += 1){
+            
+            c[0] = HSBtoRGB(a[i], 1.0, 1.0);
+            c[1] = HSBtoRGB(b[i], 1.0, 1.0);
+            c[2] = HSBtoRGB(d[i], 1.0, 1.0);
+            c[3] = HSBtoRGB(e[i], 1.0, 1.0);
+            c[4] = HSBtoRGB(f[i], 1.0, 1.0);
+                
+            ws2812b_setColor(c, 5);
+            int t = 0;
+            while (t < 500000){
+                t++
+                ;
+            }
+        }  
+//        for (int i = 360; i > 0; i -= 1){
+//            
+//            c[0] = HSBtoRGB(a[i], 1.0, 1.0);
+//            c[1] = HSBtoRGB(b[i], 1.0, 1.0);
+//            c[2] = HSBtoRGB(d[i], 1.0, 1.0);
+//            c[3] = HSBtoRGB(e[i], 1.0, 1.0);
+//            c[4] = HSBtoRGB(f[i], 1.0, 1.0);
+//                
+//            ws2812b_setColor(c, 5);
+//            int t = 0;
+//            while (t < 500000){
+//                t++
+//                ;
+//            }
+//        } 
     }
 }
