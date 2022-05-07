@@ -239,9 +239,9 @@ int main() {
             blink();
         }
 
-        for (int i=0; i<400; i++){
+        for (int i=0; i<10000; i++){
             LATBbits.LATB13 = 0; // Chip select low
-            unsigned short p = trig_traj(128, (3*M_PI)/100, 0, 128, i, 1);
+            unsigned short p = trig_traj(128, (350*M_PI)/10000, 0, 128, i, 1);
             spi_io(p >> 8);
             spi_io(p);
             LATBbits.LATB13 = 1; // Chip select high   
@@ -252,7 +252,6 @@ int main() {
             spi_io(p);
             LATBbits.LATB13 = 1; // Chip select high
 
-            
 //            for (int j = 0; j < 500000; j++) {
 //                ;
 //            }
